@@ -1,0 +1,28 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make the zip
+        run: |
+          D="octo-${GITHUB_REF_NAME}"
+          mkdir "$D"
+          for f in index.html README.md LICENSE RELEASE_NOTES.md CITATION.cff; do
+            [ -f "$f" ] && cp "$f" "$D/" || true
+          done
+          zip -r "$D.zip" "$D"
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f RELEASE_NOTES.md ]; then
+            gh release create "$GITHUB_REF_NAME" "octo-${GITHUB_REF_NAME}.zip" --title "Octo ${GITHUB_REF_NAME}" --notes-file RELEASE_NOTES.md
+          else
+            gh release create "$GITHUB_REF_NAME" "octo-${GITHUB_REF_NAME}.zip" --title "Octo ${GITHUB_REF_NAME}" --generate-notes
+          fi
