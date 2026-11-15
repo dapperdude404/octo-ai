@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🐙 Octo
-
+📄 **Research paper:** [Read the paper](paper.md) · [Download Word version](Octo-Research-Paper.docx)
 ### Eight arms. One desk.
 **Check if writing sounds like AI, rewrite it in a human voice, and get the small jobs done. Free, no install.**
 
