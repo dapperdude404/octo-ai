@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="isdapperdude404">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Octo: AI text detector, humanizer and everyday tools</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#EAF2EF;--surface:#F8FBFA;--ink:#1A1433;--muted:#5B5878;--line:#C9D8D3;--accent:#D6336C;--on-accent:#fff;--teal:#12807A;--mark:#FFD0E0;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F0B1F;--surface:#1A1433;--ink:#ECE8FF;--muted:#A39FC4;--line:#332B57;--accent:#FF6B9A;--on-accent:#1A0A14;--teal:#4FD1C5;--mark:#5A2140;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F0B1F;--surface:#1A1433;--ink:#ECE8FF;--muted:#A39FC4;--line:#332B57;--accent:#FF6B9A;--on-accent:#1A0A14;--teal:#4FD1C5;--mark:#5A2140;color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Instrument Sans",system-ui,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 56px}
+header{display:flex;align-items:center;gap:20px;margin-bottom:22px}
+header svg{width:112px;flex:none}
+h1{font:800 clamp(2.2rem,7vw,3.4rem)/1 "Bricolage Grotesque",system-ui,sans-serif;margin:0 0 6px;letter-spacing:-.02em}
+header p{margin:0;color:var(--muted);max-width:44ch}
+.arm{fill:none;stroke:var(--accent);stroke-width:7;stroke-linecap:round}
+.head{fill:var(--accent)}.sclera{fill:#fff}.pupil{fill:#1A1433}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+nav button{font:600 .92rem "Instrument Sans",sans-serif;padding:8px 15px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+nav button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+.panel[hidden]{display:none}
+h2{font:700 1.4rem "Bricolage Grotesque",system-ui,sans-serif;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+textarea,.out{width:100%;min-height:150px;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;resize:vertical}
+input[type=text]{flex:1;min-width:0;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.btn{font:600 .95rem "Instrument Sans",sans-serif;padding:9px 16px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.bar{height:12px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;transition:width .5s}
+.score{font:800 2.6rem/1 "Bricolage Grotesque",sans-serif}
+.out{min-height:0;white-space:pre-wrap;overflow-wrap:anywhere}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
+ul.sig{margin:8px 0 14px;padding-left:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--bg)}
+.stat b{display:block;font:700 1.5rem "Bricolage Grotesque",sans-serif}
+.stat span{color:var(--muted);font-size:.85rem}
+label.chk{display:flex;gap:6px;align-items:center}
+.tasks{list-style:none;padding:0;margin:0}
+.tasks li{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.tasks li.done span{text-decoration:line-through;color:var(--muted)}
+.tasks span{flex:1;overflow-wrap:anywhere}
+.big{font:800 clamp(3.4rem,16vw,5.5rem)/1 "Bricolage Grotesque",sans-serif;font-variant-numeric:tabular-nums;margin:10px 0}
+.note{color:var(--muted);font-size:.85rem;margin-top:10px}
+@media (max-width:520px){header{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<svg viewBox="0 0 120 108" aria-hidden="true">
+<defs><g id="arms"><path class="arm" d="M38 64C26 76 12 70 14 94"/><path class="arm" d="M46 70C40 86 28 84 30 104"/><path class="arm" d="M53 73C51 88 43 92 47 106"/><path class="arm" d="M58 74C59 88 55 96 58 106"/></g></defs>
+<use href="#arms"/><use href="#arms" transform="translate(120 0) scale(-1 1)"/>
+<ellipse class="head" cx="60" cy="40" rx="35" ry="33"/>
+<circle class="sclera" cx="47" cy="42" r="8"/><circle class="sclera" cx="73" cy="42" r="8"/>
+<circle class="pupil" id="eL" cx="47" cy="42" r="4"/><circle class="pupil" id="eR" cx="73" cy="42" r="4"/>
+</svg>
+<div><h1>Octo</h1><p>Check whether writing sounds like AI, rewrite it in a human voice, and get the small jobs done.</p></div>
+</header>
+
+<nav role="tablist" id="tabs">
+<button role="tab" data-t="detect" aria-selected="true">AI detector</button>
+<button role="tab" data-t="human" aria-selected="false">AI remover</button>
+<button role="tab" data-t="count" aria-selected="false">Word counter</button>
+<button role="tab" data-t="clean" aria-selected="false">Text cleaner</button>
+<button role="tab" data-t="sum" aria-selected="false">Summarizer</button>
+<button role="tab" data-t="tasks" aria-selected="false">Tasks and notes</button>
+<button role="tab" data-t="focus" aria-selected="false">Focus timer</button>
+<button role="tab" data-t="pw" aria-selected="false">Password maker</button>
+<button role="tab" data-t="files" aria-selected="false">File converter</button>
+<button role="tab" data-t="voice" aria-selected="false">Voice</button>
+<button role="tab" data-t="face" aria-selected="false">Face detection</button>
+<button role="tab" data-t="predict" aria-selected="false">Predictor</button>
+<button role="tab" data-t="hints" aria-selected="false">AI hints</button>
+<button role="tab" data-t="trends" aria-selected="false">2026 watch</button>
+</nav>
+<p class="note" id="hint" aria-live="polite" style="margin:-6px 0 14px"></p>
+
+<section class="panel" id="p-detect">
+<h2>AI detector</h2><p class="sub">Paste at least 40 words. Octo looks for stock AI phrases, even sentence rhythm, and stiff phrasing.</p>
+<textarea id="d-in" placeholder="Paste your text here"></textarea>
+<div class="row"><button class="btn" id="d-go">Check text</button><button class="btn ghost" id="d-sample">Try a sample</button></div>
+<div id="d-res" hidden>
+<div class="row"><div class="score" id="d-score">0</div><div><b id="d-label"></b><div class="note" style="margin:0">AI likelihood out of 100</div></div></div>
+<div class="bar"><i id="d-bar"></i></div>
+<ul class="sig" id="d-sig"></ul>
+<div class="out" id="d-hl"></div>
+</div>
+<p class="note">This is a pattern-based estimate, not proof. Human writing can score high and edited AI text can score low.</p>
+</section>
+
+<section class="panel" id="p-human" hidden>
+<h2>AI remover</h2><p class="sub">Swaps stock AI wording for plain speech, adds contractions, trims em dashes, and splits very long sentences.</p>
+<textarea id="h-in" placeholder="Paste AI-written text here"></textarea>
+<div class="row"><button class="btn" id="h-go">Remove AI traces</button></div>
+<div id="h-res" hidden>
+<p class="sub" id="h-rep"></p>
+<textarea class="out" id="h-out" readonly style="min-height:150px"></textarea>
+<div class="row"><button class="btn ghost" id="h-copy">Copy result</button></div>
+</div>
+<p class="note">Read the result and add your own details. A rewrite improves tone, but no tool can guarantee how another detector will score it.</p>
+</section>
+
+<section class="panel" id="p-count" hidden>
+<h2>Word counter</h2><p class="sub">Live counts and a readability score as you type.</p>
+<textarea id="c-in" placeholder="Type or paste text"></textarea>
+<div class="grid" id="c-grid" style="margin-top:14px"></div>
+</section>
+
+<section class="panel" id="p-clean" hidden>
+<h2>Text cleaner</h2><p class="sub">Tidy messy text, then change its case.</p>
+<textarea id="k-in" placeholder="Paste messy text"></textarea>
+<div class="row">
+<label class="chk"><input type="checkbox" id="o-sp" checked> Fix extra spaces</label>
+<label class="chk"><input type="checkbox" id="o-bl" checked> Remove blank lines</label>
+<label class="chk"><input type="checkbox" id="o-br"> Join into one paragraph</label>
+<label class="chk"><input type="checkbox" id="o-em"> Remove emoji</label>
+<label class="chk"><input type="checkbox" id="o-du"> Remove duplicate lines</label>
+</div>
+<div class="row"><button class="btn" id="k-go">Clean text</button>
+<button class="btn ghost" data-case="up">UPPERCASE</button><button class="btn ghost" data-case="low">lowercase</button><button class="btn ghost" data-case="title">Title Case</button><button class="btn ghost" data-case="sent">Sentence case</button></div>
+<textarea id="k-out" readonly placeholder="Cleaned text appears here"></textarea>
+<div class="row"><button class="btn ghost" id="k-copy">Copy result</button></div>
+</section>
+
+<section class="panel" id="p-sum" hidden>
+<h2>Summarizer</h2><p class="sub">Picks the most important sentences from your text.</p>
+<textarea id="s-in" placeholder="Paste an article or notes"></textarea>
+<div class="row"><label class="chk">Sentences: <input type="range" id="s-n" min="1" max="6" value="3"> <b id="s-nv">3</b></label><button class="btn" id="s-go">Summarize</button></div>
+<div class="out" id="s-out" hidden></div>
+</section>
+
+<section class="panel" id="p-tasks" hidden>
+<h2>Tasks and notes</h2><p class="sub">Saved in this browser only.</p>
+<div class="row"><input type="text" id="t-in" placeholder="Add a task" aria-label="New task"><button class="btn" id="t-add">Add task</button></div>
+<ul class="tasks" id="t-list"></ul>
+<h2 style="margin-top:20px">Scratch notes</h2>
+<textarea id="n-notes" placeholder="Jot anything down"></textarea>
+</section>
+
+<section class="panel" id="p-focus" hidden>
+<h2>Focus timer</h2><p class="sub">Work in short blocks, then rest.</p>
+<div class="row"><button class="btn ghost" data-m="25">Focus 25</button><button class="btn ghost" data-m="5">Break 5</button><button class="btn ghost" data-m="50">Deep 50</button></div>
+<div class="big" id="f-time" role="timer">25:00</div>
+<div class="row"><button class="btn" id="f-start">Start</button><button class="btn ghost" id="f-reset">Reset</button></div>
+<p class="note" id="f-msg" aria-live="polite"></p>
+</section>
+
+<section class="panel" id="p-pw" hidden>
+<h2>Password maker</h2><p class="sub">Generated in your browser. Nothing is sent anywhere.</p>
+<input type="text" id="p-out" readonly aria-label="Generated password" style="width:100%;font-family:ui-monospace,Menlo,monospace;font-size:1.1rem">
+<div class="row"><label class="chk">Length: <input type="range" id="p-len" min="8" max="40" value="16"> <b id="p-lv">16</b></label>
+<label class="chk"><input type="checkbox" id="p-up" checked> Capitals</label>
+<label class="chk"><input type="checkbox" id="p-nu" checked> Numbers</label>
+<label class="chk"><input type="checkbox" id="p-sy" checked> Symbols</label></div>
+<div class="row"><button class="btn" id="p-gen">Generate new</button><button class="btn ghost" id="p-copy">Copy password</button></div>
+</section>
+
+<section class="panel" id="p-files" hidden>
+<h2>File converter</h2><p class="sub">Open a PDF, Word, Excel, CSV or text file, pull out its text, then save it as Word or plain text. Files stay in your browser.</p>
+<input type="file" id="f-file" accept=".pdf,.docx,.xlsx,.xls,.csv,.txt,.md,.json,.html" aria-label="Choose a file">
+<p class="note" id="f-st" aria-live="polite"></p>
+<textarea id="f-out" placeholder="Extracted text appears here. You can edit it before saving."></textarea>
+<div class="row"><button class="btn" id="f-docx">Save as Word</button><button class="btn ghost" id="f-txt">Save as text</button><button class="btn ghost" id="f-det">Check for AI</button><button class="btn ghost" id="f-sum">Summarize</button></div>
+<p class="note">Scanned PDFs made of images have no selectable text, so they come out empty. OCR is not included yet.</p>
+</section>
+
+<section class="panel" id="p-voice" hidden>
+<h2>Voice</h2><p class="sub">Talk and Octo types for you. Say “open timer” or “open tasks” to jump between tools.</p>
+<div class="row"><button class="btn" id="v-mic">Start listening</button><button class="btn ghost" id="v-say">Read aloud</button><button class="btn ghost" id="v-stop">Stop reading</button><button class="btn ghost" id="v-copy">Copy text</button></div>
+<p class="note" id="v-live" aria-live="polite"></p>
+<textarea id="v-out" placeholder="Your spoken words appear here"></textarea>
+<p class="note" id="v-msg"></p>
+</section>
+
+<section class="panel" id="p-face" hidden>
+<h2>Face detection</h2><p class="sub">Finds and counts faces from your camera, on your device. Octo does not identify who anyone is, and no video leaves your browser.</p>
+<div class="row"><button class="btn" id="fc-start">Start camera</button><button class="btn ghost" id="fc-stop">Stop camera</button></div>
+<canvas id="fc-c" width="640" height="360" style="width:100%;height:auto;border-radius:8px;background:var(--bg)"></canvas><video id="fc-v" playsinline muted hidden></video>
+<p class="note" id="fc-msg" aria-live="polite">Camera is off.</p>
+</section>
+
+<section class="panel" id="p-predict" hidden>
+<h2>Predictor</h2><p class="sub">Enter numbers in order, such as weekly sales or study hours. Octo draws the trend and projects what comes next.</p>
+<textarea id="pr-in" style="min-height:80px" placeholder="Example: 12, 15, 14, 18, 21, 20, 25"></textarea>
+<div class="row"><label class="chk">Steps ahead: <input type="range" id="pr-k" min="1" max="10" value="4"> <b id="pr-kv">4</b></label><button class="btn" id="pr-go">Predict</button></div>
+<div id="pr-out"></div>
+<p class="note">A straight-line estimate from your own numbers. It cannot see events that change the pattern.</p>
+</section>
+
+<section class="panel" id="p-hints" hidden>
+<h2>AI hints</h2><p class="sub">Ask Claude for short, practical suggestions about your work.</p>
+<div class="row"><button class="btn ghost" data-q="tasks">Plan my tasks</button><button class="btn ghost" data-q="write">Improve my writing</button><button class="btn ghost" data-q="fore">Explain my forecast</button></div>
+<textarea id="a-in" placeholder="Paste your text, tasks or question, or use a button above"></textarea>
+<div class="row"><button class="btn" id="a-go">Get hints</button></div>
+<div class="out" id="a-out" hidden></div>
+</section>
+
+<section class="panel" id="p-trends" hidden>
+<h2>2026 watch</h2><p class="sub">Themes that industry write-ups keep pointing to this year. These are expectations, not guarantees.</p>
+<ul class="sig">
+<li><b>Agents that act.</b> Apps move from answering to doing multi-step work. Analysts also warn many agent projects will be cancelled by 2027, so start narrow.</li>
+<li><b>Voice and vision by default.</b> Talking, showing a camera or a document is becoming as normal as typing. Octo’s Voice and Face tools are small versions of this.</li>
+<li><b>On-device AI.</b> Smaller models run on your phone or laptop for speed and privacy.</li>
+<li><b>Reasoning models.</b> Models that work through problems step by step are showing up in everyday tools.</li>
+<li><b>Interfaces built on demand.</b> Apps draw charts, forms and dashboards for your question instead of a fixed screen.</li>
+<li><b>Rules and trust.</b> Expect more disclosure rules for AI-made content, which is why AI detection and clear editing matter.</li>
+</ul>
+</section>
+<footer class="note" style="margin-top:28px;text-align:center">Developer: <a href="https://github.com/isdapperdude404" target="_blank" rel="noopener noreferrer" style="color:var(--teal);font-weight:600">isdapperdude404</a> on GitHub</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const norm=t=>t.replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"');
+const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const hesc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const sents=t=>norm(t).split(/(?<=[.!?])\s+/).filter(s=>s.trim());
+const wc=t=>(t.match(/[A-Za-z']+/g)||[]).length;
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+async function copy(el,btn){const o=btn.textContent;try{await navigator.clipboard.writeText(el.value!==undefined?el.value:el.textContent);btn.textContent='Copied'}catch(e){btn.textContent='Press Ctrl+C';el.select&&el.select()}setTimeout(()=>btn.textContent=o,1400)}
+
+/* tabs */
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+ document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!=='p-'+b.dataset.t);
+});
+
+/* octopus eyes */
+addEventListener('pointermove',e=>{
+ const r=document.querySelector('header svg').getBoundingClientRect();
+ const a=Math.atan2(e.clientY-(r.top+r.height*.4),e.clientX-(r.left+r.width/2));
+ const tr=`translate(${Math.cos(a)*3}px,${Math.sin(a)*3}px)`;
+ $('eL').style.transform=tr;$('eR').style.transform=tr;
+});
+
+/* detector */
+const PH=["delve","delves","tapestry","testament to","fast-paced","ever-evolving","it is important to note","it's important to note","it is worth noting","moreover","furthermore","additionally","in conclusion","in summary","landscape","leverage","seamless","seamlessly","game-changer","embark","realm","foster","robust","pivotal","crucial","comprehensive","holistic","underscore","multifaceted","harness","elevate","paradigm","synergy","cutting-edge","revolutionize","myriad","plethora","unlock","navigate the","at the end of the day","in the world of","play a vital role","rich tapestry"].sort((a,b)=>b.length-a.length);
+const RE=new RegExp('\\b('+PH.map(esc).join('|')+')\\b','gi');
+function analyze(raw){
+ const t=norm(raw),w=wc(t),S=sents(t);
+ const found={};let hits=0;
+ (t.match(RE)||[]).forEach(m=>{m=m.toLowerCase();found[m]=(found[m]||0)+1;hits++});
+ const ps=Math.min(45,hits/w*900);
+ const L=S.map(wc),mean=L.reduce((a,b)=>a+b,0)/L.length||1;
+ const sd=Math.sqrt(L.reduce((a,b)=>a+(b-mean)**2,0)/L.length),cv=sd/mean;
+ const bs=S.length>=4?Math.max(0,Math.min(1,(0.55-cv)/0.55))*25:0;
+ const con=(t.match(/\b\w+'(t|s|re|ve|ll|d|m)\b/gi)||[]).length;
+ const nc=w>=60&&con===0?10:0;
+ const dash=(t.match(/\u2014/g)||[]).length,ds=Math.min(10,dash*4);
+ const st=S.filter(s=>/^(moreover|furthermore|additionally|however|overall|ultimately|in conclusion|in summary|consequently)\b/i.test(s)).length;
+ const ss=Math.min(10,st*4);
+ const score=Math.round(Math.max(0,Math.min(100,ps+bs+nc+ds+ss)));
+ const sig=[];
+ if(hits)sig.push(hits+' stock AI phrase'+(hits>1?'s':'')+': '+Object.keys(found).slice(0,6).join(', '));
+ if(bs>10)sig.push('Sentence lengths are unusually even');
+ if(nc)sig.push('No contractions in a long text');
+ if(dash)sig.push(dash+' em dash'+(dash>1?'es':''));
+ if(st)sig.push(st+' formal transition opener'+(st>1?'s':''));
+ return{score,sig,t};
+}
+const label=s=>s<30?'Likely human':s<60?'Mixed signals':'Likely AI-written';
+const color=s=>s<30?'var(--teal)':s<60?'#D99A00':'var(--accent)';
+const SAMPLE="In today's fast-paced digital landscape, it is important to note that artificial intelligence plays a pivotal role in shaping how we work. Moreover, businesses can leverage cutting-edge tools to unlock seamless productivity. Furthermore, a robust and comprehensive strategy is crucial to navigate the ever-evolving world of technology. Additionally, teams that embrace innovation will foster growth and elevate their results. In conclusion, the future is a testament to what we can achieve together.";
+$('d-sample').onclick=()=>{$('d-in').value=SAMPLE};
+$('d-go').onclick=()=>{
+ const v=$('d-in').value;
+ if(wc(v)<40){alert('Add at least 40 words so the check is meaningful.');return}
+ const r=analyze(v);
+ $('d-res').hidden=false;$('d-score').textContent=r.score;$('d-label').textContent=label(r.score);
+ const bar=$('d-bar');bar.style.width=r.score+'%';bar.style.background=color(r.score);
+ $('d-sig').innerHTML=(r.sig.length?r.sig:['No strong AI signals found']).map(s=>'<li>'+hesc(s)+'</li>').join('');
+ $('d-hl').innerHTML=hesc(r.t).replace(RE,m=>'<mark>'+m+'</mark>');
+};
+
+/* remover */
+const MAP=[["delve into","dig into"],["delves into","digs into"],["delve","dig"],["utilize","use"],["leverage","use"],["furthermore","also"],["moreover","also"],["additionally","also"],["it is important to note that",""],["it's important to note that",""],["it is worth noting that",""],["in today's fast-paced world","these days"],["in today's fast-paced digital landscape","these days"],["a plethora of","lots of"],["a myriad of","many"],["plethora","lots"],["myriad","many"],["seamlessly","smoothly"],["seamless","smooth"],["robust","solid"],["crucial","key"],["pivotal","key"],["comprehensive","full"],["cutting-edge","modern"],["game-changer","big shift"],["rich tapestry","mix"],["tapestry","mix"],["testament to","proof of"],["realm","area"],["embark on","start"],["harness","use"],["foster","build"],["elevate","improve"],["ever-evolving","changing"],["facilitate","help"],["commence","start"],["numerous","many"],["subsequently","then"],["unlock","open up"],["holistic","whole"],["underscore","highlight"],["multifaceted","complex"]].sort((a,b)=>b[0].length-a[0].length);
+const CON=[["do not","don't"],["does not","doesn't"],["did not","didn't"],["cannot","can't"],["can not","can't"],["will not","won't"],["would not","wouldn't"],["could not","couldn't"],["should not","shouldn't"],["is not","isn't"],["are not","aren't"],["was not","wasn't"],["have not","haven't"],["it is","it's"],["that is","that's"],["they are","they're"],["we are","we're"],["you are","you're"],["I am","I'm"],["there is","there's"]];
+const rep=(t,list)=>list.reduce((s,[a,b])=>s.replace(new RegExp('\\b'+esc(a)+'\\b','gi'),m=>/^[A-Z]/.test(m)?cap(b):b),t);
+function humanize(raw){
+ let t=norm(raw);
+ t=t.replace(/\b(In conclusion|In summary),\s*/gi,'');
+ const O={however:'But ',therefore:'So ',consequently:'So ',moreover:'Plus, ',furthermore:'Also, ',additionally:'Also, ',ultimately:'In the end, '};
+ t=t.replace(/\b(However|Therefore|Consequently|Moreover|Furthermore|Additionally|Ultimately),\s*/g,(m,w)=>O[w.toLowerCase()]);
+ t=rep(rep(t,MAP),CON);
+ t=t.replace(/\s*\u2014\s*/g,', ').replace(/,\s*,/g,',').replace(/[ \t]{2,}/g,' ').replace(/\s+([,.!?])/g,'$1');
+ t=t.split('\n').map(line=>sents(line).map(s=>{
+  if(wc(s)>26){const m=s.match(/,\s+(and|but|so)\s+/i);if(m&&m.index>40)return s.slice(0,m.index)+'. '+cap(s.slice(m.index+m[0].length))}
+  return s}).join(' ')).join('\n');
+ return t.replace(/(^|[.!?]\s+|\n\s*)([a-z])/g,(m,a,b)=>a+b.toUpperCase()).trim();
+}
+$('h-go').onclick=()=>{
+ const v=$('h-in').value;if(!v.trim())return;
+ const before=wc(v)>=40?analyze(v).score:null,out=humanize(v);
+ $('h-res').hidden=false;$('h-out').value=out;
+ $('h-rep').textContent=before===null?'Rewritten. Add 40+ words to see an AI score.':'AI likelihood went from '+before+' to '+analyze(out).score+'.';
+};
+$('h-copy').onclick=e=>copy($('h-out'),e.target);
+
+/* counter */
+function syl(w){w=w.toLowerCase().replace(/[^a-z]/g,'');if(!w)return 0;w=w.replace(/e$/,'');return Math.max(1,(w.match(/[aeiouy]+/g)||[]).length)}
+function count(){
+ const t=$('c-in').value,w=wc(t),s=sents(t).length,p=t.split(/\n\s*\n/).filter(x=>x.trim()).length;
+ const sy=(t.match(/[A-Za-z']+/g)||[]).reduce((a,x)=>a+syl(x),0);
+ const fl=w&&s?Math.round(206.835-1.015*(w/s)-84.6*(sy/w)):0;
+ const lab=!w?'-':fl>=60?'Easy':fl>=30?'Moderate':'Dense';
+ const mins=w/220,rt=!w?'0 min':mins<1?'under 1 min':Math.round(mins)+' min';
+ const d=[[w,'Words'],[t.length,'Characters'],[s,'Sentences'],[p,'Paragraphs'],[rt,'Reading time'],[w?fl+' ('+lab+')':'-','Readability']];
+ $('c-grid').innerHTML=d.map(([a,b])=>'<div class="stat"><b>'+a+'</b><span>'+b+'</span></div>').join('');
+}
+$('c-in').oninput=count;count();
+
+/* cleaner */
+$('k-go').onclick=()=>{
+ let t=$('k-in').value;
+ if($('o-sp').checked)t=t.split('\n').map(l=>l.replace(/[ \t]{2,}/g,' ').trim()).join('\n');
+ if($('o-em').checked)t=t.replace(/\p{Extended_Pictographic}\uFE0F?/gu,'');
+ if($('o-bl').checked)t=t.split('\n').filter(l=>l.trim()).join('\n');
+ if($('o-du').checked){const seen=new Set();t=t.split('\n').filter(l=>{const k=l.trim().toLowerCase();if(!k)return true;if(seen.has(k))return false;seen.add(k);return true}).join('\n')}
+ if($('o-br').checked)t=t.split('\n').map(l=>l.trim()).filter(Boolean).join(' ');
+ $('k-out').value=t;
+};
+document.querySelectorAll('[data-case]').forEach(b=>b.onclick=()=>{
+ const o=$('k-out'),c=b.dataset.case,t=o.value||$('k-in').value;
+ o.value=c==='up'?t.toUpperCase():c==='low'?t.toLowerCase():c==='title'?t.toLowerCase().replace(/\b[a-z]/g,m=>m.toUpperCase()):t.toLowerCase().replace(/(^|[.!?]\s+|\n)([a-z])/g,(m,a,x)=>a+x.toUpperCase());
+});
+$('k-copy').onclick=e=>copy($('k-out'),e.target);
+
+/* summarizer */
+const STOP=new Set("the a an and or but of to in on at for with by from is are was were be been it its this that these those as not have has had will would can could their they them we you i he she his her our your".split(' '));
+$('s-n').oninput=e=>$('s-nv').textContent=e.target.value;
+$('s-go').onclick=()=>{
+ const S=sents($('s-in').value),o=$('s-out');
+ if(S.length<2){o.hidden=false;o.textContent='Paste at least two sentences to summarize.';return}
+ const f={};norm($('s-in').value).toLowerCase().match(/[a-z']+/g).forEach(x=>{if(!STOP.has(x))f[x]=(f[x]||0)+1});
+ const sc=S.map((s,i)=>{const ws=s.toLowerCase().match(/[a-z']+/g)||[];return{i,v:ws.reduce((a,x)=>a+(f[x]||0),0)/Math.sqrt(ws.length||1)}});
+ const pick=sc.sort((a,b)=>b.v-a.v).slice(0,+$('s-n').value).sort((a,b)=>a.i-b.i);
+ o.hidden=false;o.textContent=pick.map(p=>S[p.i]).join(' ');
+};
+
+/* tasks */
+let tasks=ls.get('octo-tasks',[]);
+function drawTasks(){
+ const ul=$('t-list');ul.innerHTML='';
+ if(!tasks.length){const li=document.createElement('li');li.textContent='No tasks yet. Add your first one above.';li.style.color='var(--muted)';ul.append(li)}
+ tasks.forEach((k,i)=>{
+  const li=document.createElement('li');if(k.d)li.className='done';
+  const c=document.createElement('input');c.type='checkbox';c.checked=k.d;c.setAttribute('aria-label','Done');
+  c.onchange=()=>{k.d=c.checked;ls.set('octo-tasks',tasks);drawTasks()};
+  const s=document.createElement('span');s.textContent=k.t;
+  const x=document.createElement('button');x.className='btn ghost';x.textContent='Delete';
+  x.onclick=()=>{tasks.splice(i,1);ls.set('octo-tasks',tasks);drawTasks()};
+  li.append(c,s,x);ul.append(li);
+ });
+}
+function addTask(){const v=$('t-in').value.trim();if(!v)return;tasks.push({t:v,d:false});$('t-in').value='';ls.set('octo-tasks',tasks);drawTasks()}
+$('t-add').onclick=addTask;$('t-in').onkeydown=e=>{if(e.key==='Enter')addTask()};
+$('n-notes').value=ls.get('octo-notes','');$('n-notes').oninput=e=>ls.set('octo-notes',e.target.value);
+drawTasks();
+
+/* focus timer */
+let total=25*60,left=total,iv=null;
+const draw=()=>$('f-time').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+function stop(){clearInterval(iv);iv=null;$('f-start').textContent='Start'}
+$('f-start').onclick=()=>{
+ if(iv){stop();return}
+ $('f-msg').textContent='';$('f-start').textContent='Pause';
+ iv=setInterval(()=>{left--;draw();if(left<=0){stop();$('f-msg').textContent='Time is up. Take a breath.'}},1000);
+};
+$('f-reset').onclick=()=>{stop();left=total;draw();$('f-msg').textContent=''};
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{stop();total=left=+b.dataset.m*60;draw();$('f-msg').textContent=''});
+
+/* password */
+function gen(){
+ let set='abcdefghijkmnopqrstuvwxyz';
+ if($('p-up').checked)set+='ABCDEFGHJKLMNPQRSTUVWXYZ';
+ if($('p-nu').checked)set+='23456789';
+ if($('p-sy').checked)set+='!@#$%^&*-_=+?';
+ const n=+$('p-len').value,a=new Uint32Array(n);crypto.getRandomValues(a);
+ $('p-out').value=Array.from(a,x=>set[x%set.length]).join('');
+}
+$('p-len').oninput=e=>{$('p-lv').textContent=e.target.value;gen()};
+['p-up','p-nu','p-sy'].forEach(i=>$(i).onchange=gen);
+$('p-gen').onclick=gen;$('p-copy').onclick=e=>copy($('p-out'),e.target);gen();
+
+/* hints per tab */
+const TIPS={detect:'Hint: score above 60? Send the text to AI remover next.',human:'Hint: after rewriting, add one personal detail. It reads more human than any rule.',count:'Hint: readability above 60 is easy for most people.',clean:'Hint: tick Remove duplicate lines before copying lists.',sum:'Hint: 2 sentences suit emails, 4 suit reports.',tasks:'Hint: add the hardest task first, then start the Focus timer.',focus:'Hint: one task per block, then take the break.',pw:'Hint: length beats complexity. Use 16 characters or more.',files:'Hint: choose a PDF, Word or Excel file, then save it as Word or text.',voice:'Hint: say "open timer" to jump to another tool.',face:'Hint: even light on your face keeps detection steady.',predict:'Hint: use at least 6 numbers for a steadier trend.',hints:'Hint: use a quick button to load your tasks or text, then ask.',trends:'Hint: treat these as themes to watch, not promises.'};
+const go=t=>document.querySelector('[data-t="'+t+'"]').click();
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)$('hint').textContent=TIPS[b.dataset.t]||''});
+$('hint').textContent=TIPS.detect;
+
+/* helper libraries, loaded only when needed */
+const CDN='https://cdnjs.cloudflare.com/ajax/libs/';
+const LIB={pdf:[CDN+'pdf.js/3.11.174/pdf.worker.min.js',CDN+'pdf.js/3.11.174/pdf.min.js'],docx:[CDN+'mammoth/1.6.0/mammoth.browser.min.js'],zip:[CDN+'jszip/3.10.1/jszip.min.js'],xls:[CDN+'xlsx/0.18.5/xlsx.full.min.js']},loaded={};
+const need=k=>loaded[k]||(loaded[k]=LIB[k].reduce((p,u)=>p.then(()=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>no(new Error('A helper library could not load'));document.head.append(s)})),Promise.resolve()));
+
+/* file converter */
+$('f-file').onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;const st=$('f-st'),n=f.name.toLowerCase();st.textContent='Reading '+f.name+'...';
+ try{let t='';
+  if(n.endsWith('.pdf')){await need('pdf');pdfjsLib.GlobalWorkerOptions.workerSrc=LIB.pdf[0];const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;for(let i=1;i<=pdf.numPages;i++){const c=await(await pdf.getPage(i)).getTextContent();t+=c.items.map(x=>x.str+(x.hasEOL?'\n':' ')).join('')+'\n\n'}}
+  else if(n.endsWith('.docx')){await need('docx');t=(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value}
+  else if(/\.(xlsx|xls)$/.test(n)){await need('xls');const wb=XLSX.read(await f.arrayBuffer());t=wb.SheetNames.map(s=>'# '+s+'\n'+XLSX.utils.sheet_to_csv(wb.Sheets[s])).join('\n\n')}
+  else t=await f.text();
+  $('f-out').value=t.trim();st.textContent=t.trim()?'Done: '+wc(t)+' words from '+f.name+'.':'No selectable text found in '+f.name+'. It may be a scanned image.';
+ }catch(err){st.textContent='Could not read this file: '+err.message}
+};
+async function save(name,data){
+ const d=window.claude?await claude.use('downloads'):null;
+ if(!d){$('f-st').textContent='Saving is not available in this view. Copy the text instead.';return}
+ try{await d.save({filename:name,data})}catch(e){if(e.code!=='declined')$('f-st').textContent='Could not save: '+(e.message||e.code)}
+}
+$('f-txt').onclick=()=>save('octo-text.txt',$('f-out').value);
+$('f-docx').onclick=async()=>{
+ const t=$('f-out').value;if(!t.trim())return;
+ try{await need('zip')}catch(e){$('f-st').textContent=e.message;return}
+ const z=new JSZip(),H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',x=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+ z.file('[Content_Types].xml',H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+ z.file('_rels/.rels',H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+ z.file('word/document.xml',H+'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+t.split('\n').map(l=>'<w:p><w:r><w:t xml:space="preserve">'+x(l)+'</w:t></w:r></w:p>').join('')+'</w:body></w:document>');
+ save('octo-document.docx',await z.generateAsync({type:'blob'}));
+};
+$('f-det').onclick=()=>{$('d-in').value=$('f-out').value;go('detect')};
+$('f-sum').onclick=()=>{$('s-in').value=$('f-out').value;go('sum')};
+
+/* voice */
+let dic=null;
+(async()=>{
+ try{dic=window.claude?await claude.use('dictation'):null}catch(e){}
+ if(!dic){$('v-msg').textContent='Voice typing is not available in this browser. Try Chrome or the Claude desktop app.';return}
+ dic.onPartial(({text})=>$('v-live').textContent=text);
+ dic.onFinal(({text})=>{$('v-live').textContent='';if(cmd(text))return;const o=$('v-out');o.value+=(o.value&&!/\s$/.test(o.value)?' ':'')+text});
+ dic.onState(({state})=>$('v-mic').textContent=state==='listening'?'Stop listening':'Start listening');
+})();
+function cmd(t){const m=t.trim().toLowerCase().replace(/[.!?]$/,'').match(/^(?:open|go to|show)\s+(.+)$/);if(!m)return false;const k=m[1].replace(/^the /,''),b=[...document.querySelectorAll('#tabs button')].find(x=>x.textContent.toLowerCase().includes(k));if(b){b.click();return true}return false}
+$('v-mic').onclick=()=>{
+ if(!dic)return;
+ if($('v-mic').textContent==='Stop listening'){dic.stop();return}
+ dic.start().catch(e=>{$('v-msg').textContent=e&&e.code==='not_granted'?'Microphone permission was declined.':'Could not start voice typing.'});
+};
+$('v-say').onclick=()=>{if(!window.speechSynthesis)return;speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance($('v-out').value))};
+$('v-stop').onclick=()=>window.speechSynthesis&&speechSynthesis.cancel();
+$('v-copy').onclick=e=>copy($('v-out'),e.target);
+
+/* face detection */
+let stream=null,run=false;
+function stopCam(){run=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('fc-msg').textContent='Camera is off.'}
+$('fc-stop').onclick=stopCam;
+$('fc-start').onclick=async()=>{
+ const m=$('fc-msg');
+ if(!('FaceDetector' in window)){m.textContent='This browser has no face detection. Try Chrome on Android or desktop.';return}
+ try{stream=await navigator.mediaDevices.getUserMedia({video:true})}catch(e){m.textContent='Camera access was blocked. Allow it in your browser settings and try again.';return}
+ const v=$('fc-v'),c=$('fc-c'),x=c.getContext('2d');v.srcObject=stream;await v.play();
+ const det=new FaceDetector({fastMode:true,maxDetectedFaces:8});run=true;
+ (async function loop(){
+  if(!run)return;c.width=v.videoWidth;c.height=v.videoHeight;x.drawImage(v,0,0);
+  try{const f=await det.detect(v);x.lineWidth=4;x.strokeStyle='#FF6B9A';f.forEach(r=>{const b=r.boundingBox;x.strokeRect(b.x,b.y,b.width,b.height)});m.textContent=f.length+(f.length===1?' face':' faces')+' detected'}catch(e){m.textContent='Detection failed on this device.'}
+  setTimeout(loop,150);
+ })();
+};
+
+/* predictor */
+$('pr-k').oninput=e=>$('pr-kv').textContent=e.target.value;
+$('pr-go').onclick=()=>{
+ const y=$('pr-in').value.split(/[\s,;]+/).filter(Boolean).map(Number).filter(Number.isFinite),k=+$('pr-k').value,n=y.length,o=$('pr-out');
+ if(n<4){o.innerHTML='<p class="note">Enter at least 4 numbers separated by commas.</p>';return}
+ const mx=(n-1)/2,my=y.reduce((a,b)=>a+b,0)/n;let sxy=0,sxx=0;y.forEach((v,i)=>{sxy+=(i-mx)*(v-my);sxx+=(i-mx)**2});
+ const m=sxy/sxx,b=my-m*mx,f=Array.from({length:k},(_,i)=>b+m*(n+i));
+ const ssr=y.reduce((a,v,i)=>a+(v-(b+m*i))**2,0),sst=y.reduce((a,v)=>a+(v-my)**2,0),r2=sst?1-ssr/sst:1;
+ const all=y.concat(f),lo=Math.min(...all),hi=Math.max(...all),W=600,H=220,P=24,X=i=>P+i*(W-2*P)/(all.length-1),Y=v=>H-P-(v-lo)/((hi-lo)||1)*(H-2*P);
+ const hp=y.map((v,i)=>X(i)+','+Y(v)).join(' '),fp=[[n-1,y[n-1]]].concat(f.map((v,i)=>[n+i,v])).map(([i,v])=>X(i)+','+Y(v)).join(' ');
+ const dir=Math.abs(m)<(hi-lo)*0.01?'flat':m>0?'rising':'falling';
+ o.innerHTML='<svg viewBox="0 0 600 220" style="width:100%;height:auto" role="img" aria-label="Trend chart"><polyline points="'+hp+'" fill="none" style="stroke:var(--teal);stroke-width:3"/><polyline points="'+fp+'" fill="none" style="stroke:var(--accent);stroke-width:3;stroke-dasharray:7 6"/></svg><p id="pr-sum"><b>Trend: '+dir+'</b>, about '+m.toFixed(2)+' per step. Next '+k+': '+f.map(v=>v.toFixed(1)).join(', ')+'. Fit strength '+Math.round(r2*100)+'%.</p><p class="note">Solid line is your data. Dashed line is the projection.</p>';
+};
+
+/* AI hints (Claude) */
+document.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{
+ const q=b.dataset.q,a=$('a-in');
+ if(q==='tasks')a.value='My tasks:\n'+(tasks.map(t=>'- '+(t.d?'[done] ':'')+t.t).join('\n')||'(none yet)');
+ if(q==='write')a.value='Improve this writing:\n'+($('d-in').value||$('h-in').value||$('f-out').value||$('k-in').value);
+ if(q==='fore')a.value='Explain this forecast in plain words and suggest what to watch:\n'+(($('pr-sum')||{}).textContent||'(run the Predictor first)');
+});
+$('a-go').onclick=async()=>{
+ const o=$('a-out'),q=$('a-in').value.trim();if(!q)return;o.hidden=false;o.textContent='Thinking...';
+ let s=null;try{s=window.claude?await claude.use('sample'):null}catch(e){}
+ if(!s){o.textContent='AI hints work when this page is opened inside claude.ai. Try the tab hints above in the meantime.';return}
+ try{await s('You are Octo, a friendly productivity assistant inside a writing and planning app. Give 3 to 5 short, numbered, practical hints in plain text, under 150 words total. Do not use markdown. Task and content from the person:\n\n'+q,{modelTier:'quick',cache:false,onText:({text})=>o.textContent=text})}
+ catch(e){o.textContent=e&&e.code==='not_granted'?'Permission was declined, so no hints this time.':e&&e.code==='rate_limited'?'Too many requests. Wait a moment and try again.':'Could not get hints right now.'}
+};
+</script>
+</body>
+</html>
