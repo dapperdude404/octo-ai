@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use Octo, please cite it as below."
+title: "Octo: A Lightweight, Browser-Based Toolkit for Estimating and Reducing AI-Style Patterns in Written Text"
+type: software
+authors:
+  - family-names: Sengar
+    given-names: Aryan
+version: 1.0.0
+date-released: 2026-11-15
+license: MIT
+repository-code: "https://github.com/isdapperdude404/octo"
